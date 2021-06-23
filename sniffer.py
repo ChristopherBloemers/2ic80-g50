@@ -143,4 +143,4 @@ init_arp(victim, host)
 
 filter_mask = "dst host " + str(host) + " and dst port " + str(port)
 print(f"Filtering packets on {filter_mask}")
-pkt = sniff(filter=filter_mask, prn=print_pkt)
+pkt = sniff(filter=filter_mask, prn=print_pkt, iface=interface)
